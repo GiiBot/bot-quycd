@@ -13,7 +13,8 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 # ================= CONFIG =================
-FUND_CHANNEL_ID = 123456789012345678  # ID kênh ghi quỹ
+FUND_CHANNEL_ID = int(os.getenv("FUND_CHANNEL_ID"))
+BQT_ROLE_ID = int(os.getenv("BQT_ROLE_ID"))
 DB_FILE = "fund.db"
 TIMEZONE = timezone(timedelta(hours=7))  # VN
 
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS fund (
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS logs (
-    id INTEGER PRIMARY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     user TEXT,
     amount INTEGER,
     content TEXT,
@@ -53,28 +54,36 @@ def format_money(x: int):
 def parse_amount(text: str):
     """
     Nhận diện:
-    +5000000
-    -25m
-    +10M
-    +5k
+    +50k
+    -60k
+    +60000
+    +60.000
+    + 60k
     """
-    match = re.search(r"([+-])\s*(\d+(?:\.\d+)?)([mMkK]?)", text)
+
+    clean_text = text.replace(".", "")
+
+    match = re.search(
+        r"([+-])\s*(\d+)\s*([kKmM]?)",
+        clean_text
+    )
+
     if not match:
         return None
 
     sign, number, unit = match.groups()
-    value = float(number)
+    value = int(number)
 
-    if unit.lower() == "m":
-        value *= 1_000_000
-    elif unit.lower() == "k":
+    if unit.lower() == "k":
         value *= 1_000
+    elif unit.lower() == "m":
+        value *= 1_000_000
 
-    value = int(value)
     if sign == "-":
         value = -value
 
     return value
+
 
 # ================= EVENTS =================
 @bot.event
@@ -151,8 +160,12 @@ async def on_message(message: discord.Message):
         inline=False
     )
 
-    await message.reply(embed=embed)
-
+    await message.reply(
+        content=f"🔔 <@&{BQT_ROLE_ID}>",
+        embed=embed,
+        allowed_mentions=discord.AllowedMentions(roles=True)
+    )
+    
     await bot.process_commands(message)
 
 # ================= COMMANDS =================
