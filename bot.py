@@ -13,6 +13,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 # ================= CONFIG =================
+FUND_CHANNEL_ID = 123456789012345678  # ID kênh ghi quỹ
 DB_FILE = "fund.db"
 TIMEZONE = timezone(timedelta(hours=7))  # VN
 
@@ -83,6 +84,10 @@ async def on_ready():
 @bot.event
 async def on_message(message: discord.Message):
     if message.author.bot:
+        return
+
+    # ❗ CHỈ NHẬN DIỆN TRONG 1 KÊNH
+    if message.channel.id != FUND_CHANNEL_ID:
         return
 
     amount = parse_amount(message.content)
